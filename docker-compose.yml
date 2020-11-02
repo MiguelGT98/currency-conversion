@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    expose:
+      - "6379"
+    restart: always
+  api:
+    depends_on:
+      - redis
+    container_name: api
+    environment:
+      COUNTRY_API_ENDPOINT: "https://restcountries.eu/rest/v2"
+      CURRENCY_API_ENDPOINT: "http://data.fixer.io/api"
+      CURRENCY_API_KEY: "YOUR_API_KEY_HERE"
+      PREFERRED_CURRENCY_CODE: "SEK"
+      SECRET: "YOUR_SECRET_HERE"
+      REDIS_URL: "//redis:6379"
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    volumes:
+      - ./api:/app/api:delegated
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+  client:
+    depends_on:
+      - api
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    stdin_open: true
+    environment:
+      REACT_APP_API_ENDPOINT: "http://localhost:8080"
+    ports:
+      - "3000:3000"
+    expose:
+      - "3000"
+    volumes:
+      - ./client:/app/client:delegated
